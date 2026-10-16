@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f7fb"><title>智能拆词助手 · 免费版</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fc;color:#18253e;font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft Yahei",sans-serif}.shell{max-width:1120px;margin:auto;padding:25px}.top,.head,.actions{display:flex;justify-content:space-between;align-items:center;gap:15px}.brand{font-weight:750;display:flex;align-items:center;gap:12px}.logo{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;color:white;background:#285de9}.brand small{display:block;font-size:11px;color:#8897ac;font-weight:400}.badge{background:#e8efff;color:#3262ba;font-size:12px;border-radius:20px;padding:7px 12px}.hero{padding:36px 0 27px}.hero h1{font-size:clamp(30px,5vw,48px);line-height:1.2;margin:12px 0}.hero p{color:#75859e}.eyebrow{font-size:11px;letter-spacing:2px;color:#3061e1;font-weight:800}.card{border:1px solid #e4eaf4;background:#fff;border-radius:18px;padding:25px;margin:0 0 23px;box-shadow:0 9px 38px #12294a0a}.head{margin-bottom:17px}.head h2{margin:0;font-size:18px}.muted,.head span{font-size:12px;color:#8290a7}textarea{width:100%;min-height:135px;resize:vertical;border:1px solid #dae3f0;background:#fcfdff;border-radius:10px;padding:16px;font:15px/1.8 inherit}textarea:focus{outline:2px solid #b9cfff}.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:15px 0;color:#8290a7;font-size:12px}button{cursor:pointer}.examples button{border:0;background:#f1f5fc;color:#446393;border-radius:6px;padding:7px 9px}.primary{border:0;border-radius:10px;background:#285de9;padding:12px 25px;color:white;font-weight:700}.outline{border:1px solid #ccd9ed;border-radius:9px;padding:9px 15px;background:white;color:#315ca9}.empty{text-align:center;padding:55px 5px;border:1px dashed #dbe4f1;border-radius:11px;color:#93a0b4;background:#fbfcff}.stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:17px}.stats span{background:#f3f6fc;padding:8px 12px;border-radius:9px;color:#70819b;font-size:13px}.stats b{color:#2558c7;margin-left:6px}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:11px;border-bottom:1px solid #eef1f6;text-align:left;vertical-align:middle}th{background:#f6f8fd;color:#657991}td.word{font-size:15px;font-weight:700;color:#285ad1;white-space:pre-wrap}td.reason{color:#728199;min-width:210px}input,select{padding:8px;border:1px solid #d7e0ef;border-radius:7px;background:white;color:#314561}input{width:100px}.hint{background:#f3f7ff;border-radius:9px;padding:13px 16px;color:#536d9a;font-size:13px;margin-top:17px}.warning{color:#a76816}.error{color:#aa2d37}footer{text-align:center;color:#9aa8b9;font-size:12px;padding:12px 0 25px}@media(max-width:650px){.shell{padding:15px}.card{padding:16px}.hero{padding:25px 0}.actions{align-items:stretch;flex-direction:column}.primary{width:100%}}
+</style></head>
+<body><main class="shell">
+<header class="top"><div class="brand"><span class="logo">词</span><span>智能拆词助手 <small>Smart Word Splitter</small></span></div><span class="badge">免费 · 离线基础版</span></header>
+<section class="hero"><div class="eyebrow">CHINESE WORD ANALYSIS</div><h1>拆词更清晰，分类更自由。</h1><p>基础中文分词 · 规则辅助分类 · 手动纠错 · CSV 导出 · 无需 API Key</p></section>
+<section class="card"><div class="head"><h2>输入文本</h2><span id="count">0 / 3000 字</span></div><textarea id="input" maxlength="3000" aria-label="待拆词文本">瑞丽是缅甸边境的一个国家</textarea><div class="examples">试试示例：<button data-example="瑞丽是缅甸边境的一个国家">边境地名</button><button data-example="我买了一本瑞丽杂志">杂志语境</button><button data-example="我今天买了一辆理想汽车">汽车品牌</button><button data-example="苹果发布了新产品">品牌语境</button></div><div class="actions"><span class="muted">本版在浏览器中执行，不上传文本。实体类别仅供参考。</span><button class="primary" id="run">开始拆词 →</button></div><p class="error" id="error" role="alert"></p></section>
+<section class="card"><div class="head"><div><h2>分析结果</h2><div class="muted">词性和实体分类均可编辑。修改后可导出 CSV。</div></div><button class="outline" id="export" hidden>导出 CSV ↓</button></div><div id="stats"></div><div id="result" class="empty">点击「开始拆词」查看结果。</div><div class="hint">说明：使用浏览器内置中文分词器与轻量启发式规则，<b>不是大模型，也没有实时联网核验</b>。冷门地名、人名及歧义词可能被错分，请人工检查。此版不依赖付费服务。</div></section>
+<footer>GitHub Pages 免费版 · 纯静态页面 · 不含服务端 API</footer>
+</main><script>
+const input=document.getElementById('input'), count=document.getElementById('count'), result=document.getElementById('result'), stats=document.getElementById('stats'), exp=document.getElementById('export'), err=document.getElementById('error');
+const categories=['非实体','人名','地名','机构','品牌','产品','作品','事件','其他实体','待核验'];
+let tokens=[];
+function updateCount(){count.textContent=input.value.length+' / 3000 字'}input.addEventListener('input',updateCount);updateCount();
+document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.example;updateCount()}));
+const places=new Map([['瑞丽','中国云南省县级市'],['北京','中国首都'],['上海','中国直辖市'],['广州','中国城市'],['深圳','中国城市'],['缅甸','东南亚国家'],['云南','中国省级行政区'],['芒市','云南省城市'],['腾冲','云南省城市'],['华盛顿','地名或人名，需要语境判断']]);
+const brands=new Map([['苹果','科技品牌或水果'],['小米','科技品牌或谷物'],['理想','汽车品牌或一般名词'],['理想汽车','汽车品牌']]);
+const particles=new Set(['的','了','着','过','吗','呢','吧','啊','和','与','及','是','在','把','被']);
+const verbs=new Set(['是','有','去','来','买','看','吃','喝','说','发布','喜欢','位于','购买','成为','觉得']);
+function classify(word,full,offset) {
+ const before=full.slice(Math.max(0,offset-8),offset),after=full.slice(offset+word.length,offset+word.length+12);
+ if(/^\s+$/.test(word))return {pos:'空白',entity:'非实体',reason:'空白字符'};
+ if(/^[\p{P}\p{S}]+$/u.test(word))return {pos:'标点',entity:'非实体',reason:'标点符号'};
+ if(/^\d+(?:\.\d+)?$/.test(word))return {pos:'数词',entity:'非实体',reason:'数字'};
+ if(places.has(word)){if(word==='瑞丽'&&/杂志|封面|期刊|时尚/.test(after+before))return {pos:'专有名词',entity:'作品',reason:'出版物语境；也可能指云南省瑞丽市'};return {pos:'专有名词',entity:'地名',reason:places.get(word)+'（内置小型示例词典）'};}
+ if(brands.has(word)){
+   const commercial=/公司|手机|汽车|品牌|产品|发布|股票|新能源|一辆|车企|科技|官网/;
+   const ordinary=/水果|吃|一颗|一个苹果|谷物|米饭|梦想|愿望|理想是/;
+   if(commercial.test(before+after)&&!ordinary.test(after))return {pos:'专有名词',entity:'品牌',reason:'品牌上下文线索，仍需核对'};
+   if(ordinary.test(before+after))return {pos:'名词',entity:'非实体',reason:'普通名词上下文'};
+   return {pos:'名词',entity:'待核验',reason:'可能是品牌或普通词语'};
+ }
+ if(particles.has(word))return {pos:verbs.has(word)?'动词':'虚词',entity:'非实体',reason:'常见功能词'};
+ if(verbs.has(word))return {pos:'动词',entity:'非实体',reason:'常见动词'};
+ if(/市$|县$|省$|国$|自治区$|自治州$/.test(word)&&word.length>1)return {pos:'专有名词',entity:'待核验',reason:'具有地理名称后缀，但未经过核验'};
+ if(/公司$|大学$|学院$|集团$/.test(word))return {pos:'专有名词',entity:'待核验',reason:'具有机构名称后缀，尚未核验'};
+ return {pos:'待核验',entity:'待核验',reason:'基础分词器未提供词性或可信的实体类别'};
+}
+function segment(text){
+ const splitter=new Intl.Segmenter('zh-CN',{granularity:'word'}),base=[...splitter.segment(text)].map(s=>({word:s.segment,index:s.index}));
+ // Merge adjacent word segments when they form a known multi-character entity.
+ const dict=[...places.keys(),...brands.keys()].sort((a,b)=>b.length-a.length);
+ let out=[],idx=0;
+ while(idx<text.length){const match=dict.find(w=>text.startsWith(w,idx)&&(idx===0||!/[a-zA-Z]/.test(text[idx-1])));if(match){out.push({word:match,index:idx});idx+=match.length;continue;}
+ const found=base.find(s=>s.index===idx);
+ if(found){out.push(found);idx+=found.word.length;}else{out.push({word:text[idx],index:idx});idx++;}
+ }
+ return out.map(t=>{const x=classify(t.word,text,t.index);return {...t,pos:x.pos,entity:x.entity,reason:x.reason};});
+}
+function render(){
+ stats.textContent='';
+ const summary=document.createElement('div');summary.className='stats';
+ for(const [label,n] of [['词语',tokens.length],['实体',tokens.filter(t=>!['非实体','待核验'].includes(t.entity)).length],['待核验',tokens.filter(t=>t.entity==='待核验').length]]){const s=document.createElement('span');s.textContent=label+' ';const b=document.createElement('b');b.textContent=n;s.append(b);summary.append(s)}stats.append(summary);
+ const wrap=document.createElement('div');wrap.className='tablewrap';const table=document.createElement('table');const thead=document.createElement('thead');const row=document.createElement('tr');
+ ['#','词语','词性（可编辑）','实体分类（可编辑）','判断依据'].forEach(s=>{const th=document.createElement('th');th.textContent=s;row.append(th)});thead.append(row);table.append(thead);
+ const tbody=document.createElement('tbody');
+ tokens.forEach((t,i)=>{const tr=document.createElement('tr');
+ const num=document.createElement('td');num.textContent=i+1;
+ const w=document.createElement('td');w.className='word';w.textContent=t.word.replace(/ /g,'␣').replace(/\n/g,'↵');
+ const p=document.createElement('td'),pInput=document.createElement('input');pInput.value=t.pos;pInput.setAttribute('aria-label','词性 '+t.word);pInput.addEventListener('input',e=>{t.pos=e.target.value});p.append(pInput);
+ const cat=document.createElement('td'),select=document.createElement('select');categories.forEach(c=>{const opt=document.createElement('option');opt.textContent=c;opt.value=c;select.append(opt)});select.value=t.entity;select.setAttribute('aria-label','实体分类 '+t.word);select.addEventListener('change',e=>{t.entity=e.target.value;t.reason='用户手动修改';render()});cat.append(select);
+ const reason=document.createElement('td');reason.className='reason';reason.textContent=t.reason;
+ tr.append(num,w,p,cat,reason);tbody.append(tr)});
+ table.append(tbody);wrap.append(table);result.className='';result.replaceChildren(wrap);exp.hidden=false;
+}
+document.getElementById('run').addEventListener('click',()=>{
+ try{
+ err.textContent='';
+ if(!('Segmenter' in Intl)){throw new Error('当前浏览器不支持 Intl.Segmenter，请更新浏览器。')}
+ if(!input.value.trim())throw new Error('请先输入要拆分的句子。');
+ tokens=segment(input.value);
+ if(tokens.map(t=>t.word).join('')!==input.value)throw new Error('分词结果校验失败，请重试。');
+ render();
+ }catch(e){err.textContent=e.message;}
+});
+function csvCell(s){return '"'+String(s).replace(/"/g,'""')+'"'}
+exp.addEventListener('click',()=>{
+ const lines=[['词语','词性','实体分类','判断依据'],...tokens.map(t=>[t.word,t.pos,t.entity,t.reason])];
+ const csv='\uFEFF'+lines.map(row=>row.map(csvCell).join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='拆词结果.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+});
+</script></body></html>
