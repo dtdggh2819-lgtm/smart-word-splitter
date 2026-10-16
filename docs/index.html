@@ -1,84 +1,71 @@
-<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f7fb"><title>智能拆词助手 · 免费版</title>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>拆词工作台 · 免费版</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f7fc;color:#18253e;font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft Yahei",sans-serif}.shell{max-width:1120px;margin:auto;padding:25px}.top,.head,.actions{display:flex;justify-content:space-between;align-items:center;gap:15px}.brand{font-weight:750;display:flex;align-items:center;gap:12px}.logo{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;color:white;background:#285de9}.brand small{display:block;font-size:11px;color:#8897ac;font-weight:400}.badge{background:#e8efff;color:#3262ba;font-size:12px;border-radius:20px;padding:7px 12px}.hero{padding:36px 0 27px}.hero h1{font-size:clamp(30px,5vw,48px);line-height:1.2;margin:12px 0}.hero p{color:#75859e}.eyebrow{font-size:11px;letter-spacing:2px;color:#3061e1;font-weight:800}.card{border:1px solid #e4eaf4;background:#fff;border-radius:18px;padding:25px;margin:0 0 23px;box-shadow:0 9px 38px #12294a0a}.head{margin-bottom:17px}.head h2{margin:0;font-size:18px}.muted,.head span{font-size:12px;color:#8290a7}textarea{width:100%;min-height:135px;resize:vertical;border:1px solid #dae3f0;background:#fcfdff;border-radius:10px;padding:16px;font:15px/1.8 inherit}textarea:focus{outline:2px solid #b9cfff}.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:15px 0;color:#8290a7;font-size:12px}button{cursor:pointer}.examples button{border:0;background:#f1f5fc;color:#446393;border-radius:6px;padding:7px 9px}.primary{border:0;border-radius:10px;background:#285de9;padding:12px 25px;color:white;font-weight:700}.outline{border:1px solid #ccd9ed;border-radius:9px;padding:9px 15px;background:white;color:#315ca9}.empty{text-align:center;padding:55px 5px;border:1px dashed #dbe4f1;border-radius:11px;color:#93a0b4;background:#fbfcff}.stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:17px}.stats span{background:#f3f6fc;padding:8px 12px;border-radius:9px;color:#70819b;font-size:13px}.stats b{color:#2558c7;margin-left:6px}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:11px;border-bottom:1px solid #eef1f6;text-align:left;vertical-align:middle}th{background:#f6f8fd;color:#657991}td.word{font-size:15px;font-weight:700;color:#285ad1;white-space:pre-wrap}td.reason{color:#728199;min-width:210px}input,select{padding:8px;border:1px solid #d7e0ef;border-radius:7px;background:white;color:#314561}input{width:100px}.hint{background:#f3f7ff;border-radius:9px;padding:13px 16px;color:#536d9a;font-size:13px;margin-top:17px}.warning{color:#a76816}.error{color:#aa2d37}footer{text-align:center;color:#9aa8b9;font-size:12px;padding:12px 0 25px}@media(max-width:650px){.shell{padding:15px}.card{padding:16px}.hero{padding:25px 0}.actions{align-items:stretch;flex-direction:column}.primary{width:100%}}
-</style></head>
-<body><main class="shell">
-<header class="top"><div class="brand"><span class="logo">词</span><span>智能拆词助手 <small>Smart Word Splitter</small></span></div><span class="badge">免费 · 离线基础版</span></header>
-<section class="hero"><div class="eyebrow">CHINESE WORD ANALYSIS</div><h1>拆词更清晰，分类更自由。</h1><p>基础中文分词 · 规则辅助分类 · 手动纠错 · CSV 导出 · 无需 API Key</p></section>
-<section class="card"><div class="head"><h2>输入文本</h2><span id="count">0 / 3000 字</span></div><textarea id="input" maxlength="3000" aria-label="待拆词文本">瑞丽是缅甸边境的一个国家</textarea><div class="examples">试试示例：<button data-example="瑞丽是缅甸边境的一个国家">边境地名</button><button data-example="我买了一本瑞丽杂志">杂志语境</button><button data-example="我今天买了一辆理想汽车">汽车品牌</button><button data-example="苹果发布了新产品">品牌语境</button></div><div class="actions"><span class="muted">本版在浏览器中执行，不上传文本。实体类别仅供参考。</span><button class="primary" id="run">开始拆词 →</button></div><p class="error" id="error" role="alert"></p></section>
-<section class="card"><div class="head"><div><h2>分析结果</h2><div class="muted">词性和实体分类均可编辑。修改后可导出 CSV。</div></div><button class="outline" id="export" hidden>导出 CSV ↓</button></div><div id="stats"></div><div id="result" class="empty">点击「开始拆词」查看结果。</div><div class="hint">说明：使用浏览器内置中文分词器与轻量启发式规则，<b>不是大模型，也没有实时联网核验</b>。冷门地名、人名及歧义词可能被错分，请人工检查。此版不依赖付费服务。</div></section>
-<footer>GitHub Pages 免费版 · 纯静态页面 · 不含服务端 API</footer>
-</main><script>
-const input=document.getElementById('input'), count=document.getElementById('count'), result=document.getElementById('result'), stats=document.getElementById('stats'), exp=document.getElementById('export'), err=document.getElementById('error');
-const categories=['非实体','人名','地名','机构','品牌','产品','作品','事件','其他实体','待核验'];
-let tokens=[];
-function updateCount(){count.textContent=input.value.length+' / 3000 字'}input.addEventListener('input',updateCount);updateCount();
-document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.example;updateCount()}));
-const places=new Map([['瑞丽','中国云南省县级市'],['北京','中国首都'],['上海','中国直辖市'],['广州','中国城市'],['深圳','中国城市'],['缅甸','东南亚国家'],['云南','中国省级行政区'],['芒市','云南省城市'],['腾冲','云南省城市'],['华盛顿','地名或人名，需要语境判断']]);
-const brands=new Map([['苹果','科技品牌或水果'],['小米','科技品牌或谷物'],['理想','汽车品牌或一般名词'],['理想汽车','汽车品牌']]);
-const particles=new Set(['的','了','着','过','吗','呢','吧','啊','和','与','及','是','在','把','被']);
-const verbs=new Set(['是','有','去','来','买','看','吃','喝','说','发布','喜欢','位于','购买','成为','觉得']);
-function classify(word,full,offset) {
- const before=full.slice(Math.max(0,offset-8),offset),after=full.slice(offset+word.length,offset+word.length+12);
- if(/^\s+$/.test(word))return {pos:'空白',entity:'非实体',reason:'空白字符'};
- if(/^[\p{P}\p{S}]+$/u.test(word))return {pos:'标点',entity:'非实体',reason:'标点符号'};
- if(/^\d+(?:\.\d+)?$/.test(word))return {pos:'数词',entity:'非实体',reason:'数字'};
- if(places.has(word)){if(word==='瑞丽'&&/杂志|封面|期刊|时尚/.test(after+before))return {pos:'专有名词',entity:'作品',reason:'出版物语境；也可能指云南省瑞丽市'};return {pos:'专有名词',entity:'地名',reason:places.get(word)+'（内置小型示例词典）'};}
- if(brands.has(word)){
-   const commercial=/公司|手机|汽车|品牌|产品|发布|股票|新能源|一辆|车企|科技|官网/;
-   const ordinary=/水果|吃|一颗|一个苹果|谷物|米饭|梦想|愿望|理想是/;
-   if(commercial.test(before+after)&&!ordinary.test(after))return {pos:'专有名词',entity:'品牌',reason:'品牌上下文线索，仍需核对'};
-   if(ordinary.test(before+after))return {pos:'名词',entity:'非实体',reason:'普通名词上下文'};
-   return {pos:'名词',entity:'待核验',reason:'可能是品牌或普通词语'};
+*{box-sizing:border-box}body{margin:0;background:#f6f5f2;color:#24262b;font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft Yahei",sans-serif}header{background:#fff;border-bottom:1px solid #e6e2dd;padding:14px 24px;display:flex;align-items:center;gap:15px}h1{font-size:18px;margin:0}header small{color:#888;font-size:12px}.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;max-width:1650px;margin:18px auto;padding:0 16px}.box{background:#fff;border:1px solid #e5e0d8;border-radius:9px;padding:15px;margin-bottom:15px;min-width:0}.heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.heading h2{font-size:15px;margin:0}.muted{color:#8b8a88;font-size:12px}.hint{font-size:12px;color:#7a7c83;line-height:1.6}textarea,input,select{font:inherit;border:1px solid #dddcd9;border-radius:6px;background:white;color:#333;padding:8px}textarea:focus,input:focus{outline:2px solid #ffcab4}textarea{width:100%;min-height:245px;resize:vertical;line-height:1.75}button{font:inherit;cursor:pointer;background:white;border:1px solid #ddd9d5;border-radius:6px;padding:7px 11px;white-space:nowrap}button:hover{background:#f8f5f2}.primary{background:#c74a19;border-color:#c74a19;color:#fff;font-weight:700}.primary:hover{background:#ab3c12}.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}.bar>button{flex:none}.groups{display:grid;gap:5px}.group{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px dashed #ece7e0}.dot{width:8px;height:8px;border-radius:50%;flex:none}.group input{min-width:0;flex:1}.group button{padding:5px 7px;color:#777}.word-editor{display:flex;gap:6px;margin-top:10px}.word-editor input{min-width:0;flex:1}.word-editor select{max-width:115px}.result{padding:0;overflow:hidden}.result-header{padding:13px 15px;border-bottom:1px solid #eee}.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.chip{font-size:12px;padding:5px 11px;border-radius:20px}.chip.active{background:#24272b;color:#fff}.tablewrap{overflow:auto;max-height:560px}.table{width:100%;border-collapse:collapse;min-width:760px;font-size:13px}.table th{position:sticky;top:0;z-index:1;background:#faf9f7;color:#68696c;text-align:left;border-bottom:1px solid #e8e3dc;padding:8px}.table td{padding:9px 8px;border-bottom:1px solid #ece8e2;vertical-align:middle}.table tr.flag{background:#fff7e3}.table td:first-child{color:#777}.table input{width:100%}.table select{min-width:95px}.table .subject{font-weight:700;color:#19638f}.table .reason{font-size:11px;color:#8d8479;max-width:200px}.rowbuttons{display:flex;gap:5px}.rowbuttons button{border:0;color:#7d7770;padding:4px}.review{color:#bd5d17}.exports{padding:14px}.tabs{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.tabs button.on{color:#c44a17;border-bottom:2px solid #c44a17;font-weight:700}.output{width:100%;height:220px;background:#faf9f7;font:13px/1.75 ui-monospace,monospace;white-space:pre;tab-size:2}.counts{font-size:12px;color:#746b62}.notice{padding:10px;background:#fff8e8;border-radius:6px;font-size:12px;color:#86602a;margin-top:8px}.status{color:#9a4b1d;font-size:12px}.empty{padding:50px 10px;text-align:center;color:#96918d}.right{min-width:0}details summary{cursor:pointer;font-weight:600}input[type=checkbox]{width:auto}footer{text-align:center;color:#999;font-size:12px;padding:20px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.tablewrap{max-height:550px}header{flex-wrap:wrap;padding:12px}.layout{padding:0 10px}}
+</style></head><body>
+<header><h1>拆词工作台</h1><small>一行一句 → 主体（人名 / 地点 / 政府…）+ 攻击落点 · 每条仅一组</small><span class="status" id="saveStatus">免费离线版 · 本机自动保存</span></header>
+<div class="layout"><aside><section class="box"><div class="heading"><h2>原始样本 <span class="muted">一行一条</span></h2><span class="muted" id="lineCount"></span></div><textarea id="source" spellcheck="false" aria-label="原始样本">在我国想入党没有内幕进不去
+达州应该加入联合国
+瑞丽是缅甸边境的一个国家
+俄罗斯的邻国是内蒙
+晚上有18cm的弟弟一起玩吗
+美羊羊杀掉喜羊羊，并且把它大卸八块煮了吃</textarea><div class="bar"><button class="primary" id="split">重新拆分</button><button id="clear">清空</button><button id="restore">加载示例</button></div><p class="hint">重新拆分会覆盖当前结果中的人工修改。编辑右侧结果时，原始样本不会改变。</p></section>
+<section class="box"><div class="heading"><h2>词库与规则</h2><span class="muted">当前浏览器自动保存</span></div><details open><summary>自定义分组（可增加 / 改名 / 删除）</summary><div class="groups" id="groups"></div><div class="bar"><input id="newGroup" placeholder="例如：地标 / 游戏角色" style="flex:1;min-width:100px"><button id="addGroup">新增分组</button></div></details><hr style="border:0;border-top:1px solid #eee;margin:16px 0"><details open><summary>主体词库（词语 → 类别）</summary><div class="word-editor"><input id="newWord" placeholder="输入词语，如：瑞丽"><select id="wordGroup"></select><button id="addWord">记入词库</button></div><div class="hint" style="margin:8px 0">支持相同词语手动覆盖分类。识别时优先采用自定义词库；请结合上下文复核多义词。</div><div id="dictionary" style="max-height:220px;overflow:auto"></div></details><div class="bar"><button id="exportConfig">导出词库配置</button><button id="importConfig">导入配置</button><input type="file" id="fileConfig" accept=".json,application/json" hidden></div></section></aside>
+<main class="right"><section class="box result"><div class="result-header"><div class="heading"><h2>拆分结果</h2><span class="muted">类别、主体、攻击落点都可修改</span></div><div class="chips" id="chips"></div></div><div class="tablewrap" id="tablewrap"><div class="empty">点击左侧「重新拆分」</div></div></section>
+<section class="box exports"><div class="heading"><h2>导出 / 一键复制</h2><div class="bar"><button class="primary" id="copy">复制全部</button><button id="download">下载</button></div></div><div class="tabs" id="tabs"></div><textarea class="output" id="output" readonly aria-label="导出文本"></textarea><p class="hint" id="formatHint"></p><div class="notice">当前采用免费离线规则，不是 AI。优先按词库提取主体，未匹配时使用启发式猜测并标记「待确认」；复杂、隐喻、无明确主体的句子需要人工调整。复制内容按当前分组与人工修正生成。</div></section></main></div><footer>不依赖 HiWork · 无需 API · 数据与词库默认保存在本地浏览器（清理浏览器数据会丢失，请定期导出配置）</footer>
+<script>
+(()=>{'use strict';
+const KEY='word-workbench-v2',EXAMPLE=document.getElementById('source').value,defaults=['人名','地点','时间','地域','政府','正向','违禁品','色情','其他','特定词','未拆分','待确认'];
+const defaultWords=[['瑞丽','地点'],['达州','地点'],['俄罗斯','地域'],['内蒙','地域'],['中国','地域'],['我国','地域'],['美羊羊','人名'],['喜羊羊','人名'],['联合国','政府']];
+const colors=['#1476a6','#108779','#7847bd','#ad2854','#2460db','#e87824','#8663a4','#a36120','#637080','#b15c22','#939393','#db922a'];
+const el=id=>document.getElementById(id);let state={source:EXAMPLE,groups:defaults.map((name,i)=>({id:'g'+i,name})),words:defaultWords.map(([word,name])=>({word,group:'g'+defaults.indexOf(name)})),rows:[],filter:'all',format:'groups'};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));el('saveStatus').textContent='已保存到本机浏览器'}catch{el('saveStatus').textContent='本机存储不可用，请导出配置'}}function restore(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&Array.isArray(s.groups)&&Array.isArray(s.rows)&&Array.isArray(s.words)){state={...state,...s};}}catch{}}
+function groupName(id){return state.groups.find(x=>x.id===id)?.name||'待确认'}
+function idByName(s){return state.groups.find(x=>x.name===s)?.id||'g11'}
+function safeGroup(id){return state.groups.some(x=>x.id===id)?id:idByName('待确认')}
+function options(select,selected){select.replaceChildren();state.groups.forEach(g=>{const opt=document.createElement('option');opt.value=g.id;opt.textContent=g.name;select.append(opt)});select.value=safeGroup(selected)}
+function textNode(tag,value,cls){const e=document.createElement(tag);e.textContent=value;if(cls)e.className=cls;return e}
+function button(label,handler,cls){const b=document.createElement('button');b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',handler);return b}
+function wordsSorted(){return [...state.words].filter(x=>x.word).sort((a,b)=>b.word.length-a.word.length)}
+function parseLine(raw,i){
+ const line=raw.trim();const words=wordsSorted();let candidate=null;
+ for(const w of words){const p=line.indexOf(w.word);if(p===0||p>0&&p<=3){candidate={subject:line.slice(0,p)+w.word,group:safeGroup(w.group),note:'命中自定义词库'};break}}
+ if(!candidate){
+ const pattern=/^(.{1,18}?)(?=是|有|没|无|要|想|应当|应该|可以|必须|加入|攻击|被|去|把|杀|说|发布|进不去|怎么样|怎么|为什么)/;
+ const m=line.match(pattern);
+ if(m&&m[1].length>0){candidate={subject:m[1],group:idByName('待确认'),note:'仅按句式猜测主体，请核对'};}
+ else {const first=line.match(/^[^，。！？!?、\s]{1,10}/);candidate={subject:first?first[0]:'',group:idByName('未拆分'),note:'未找到可靠主体，请人工拆分'};}
  }
- if(particles.has(word))return {pos:verbs.has(word)?'动词':'虚词',entity:'非实体',reason:'常见功能词'};
- if(verbs.has(word))return {pos:'动词',entity:'非实体',reason:'常见动词'};
- if(/市$|县$|省$|国$|自治区$|自治州$/.test(word)&&word.length>1)return {pos:'专有名词',entity:'待核验',reason:'具有地理名称后缀，但未经过核验'};
- if(/公司$|大学$|学院$|集团$/.test(word))return {pos:'专有名词',entity:'待核验',reason:'具有机构名称后缀，尚未核验'};
- return {pos:'待核验',entity:'待核验',reason:'基础分词器未提供词性或可信的实体类别'};
+ let subject=candidate.subject,target=line.slice(subject.length).trim();
+ if(!target){candidate.note+='；无剩余文本';}
+ return {id:Date.now().toString(36)+'-'+i+'-'+Math.random().toString(36).slice(2,7),raw:line,subject,target,group:candidate.group,note:candidate.note};
 }
-function segment(text){
- const splitter=new Intl.Segmenter('zh-CN',{granularity:'word'}),base=[...splitter.segment(text)].map(s=>({word:s.segment,index:s.index}));
- // Merge adjacent word segments when they form a known multi-character entity.
- const dict=[...places.keys(),...brands.keys()].sort((a,b)=>b.length-a.length);
- let out=[],idx=0;
- while(idx<text.length){const match=dict.find(w=>text.startsWith(w,idx)&&(idx===0||!/[a-zA-Z]/.test(text[idx-1])));if(match){out.push({word:match,index:idx});idx+=match.length;continue;}
- const found=base.find(s=>s.index===idx);
- if(found){out.push(found);idx+=found.word.length;}else{out.push({word:text[idx],index:idx});idx++;}
- }
- return out.map(t=>{const x=classify(t.word,text,t.index);return {...t,pos:x.pos,entity:x.entity,reason:x.reason};});
-}
-function render(){
- stats.textContent='';
- const summary=document.createElement('div');summary.className='stats';
- for(const [label,n] of [['词语',tokens.length],['实体',tokens.filter(t=>!['非实体','待核验'].includes(t.entity)).length],['待核验',tokens.filter(t=>t.entity==='待核验').length]]){const s=document.createElement('span');s.textContent=label+' ';const b=document.createElement('b');b.textContent=n;s.append(b);summary.append(s)}stats.append(summary);
- const wrap=document.createElement('div');wrap.className='tablewrap';const table=document.createElement('table');const thead=document.createElement('thead');const row=document.createElement('tr');
- ['#','词语','词性（可编辑）','实体分类（可编辑）','判断依据'].forEach(s=>{const th=document.createElement('th');th.textContent=s;row.append(th)});thead.append(row);table.append(thead);
- const tbody=document.createElement('tbody');
- tokens.forEach((t,i)=>{const tr=document.createElement('tr');
- const num=document.createElement('td');num.textContent=i+1;
- const w=document.createElement('td');w.className='word';w.textContent=t.word.replace(/ /g,'␣').replace(/\n/g,'↵');
- const p=document.createElement('td'),pInput=document.createElement('input');pInput.value=t.pos;pInput.setAttribute('aria-label','词性 '+t.word);pInput.addEventListener('input',e=>{t.pos=e.target.value});p.append(pInput);
- const cat=document.createElement('td'),select=document.createElement('select');categories.forEach(c=>{const opt=document.createElement('option');opt.textContent=c;opt.value=c;select.append(opt)});select.value=t.entity;select.setAttribute('aria-label','实体分类 '+t.word);select.addEventListener('change',e=>{t.entity=e.target.value;t.reason='用户手动修改';render()});cat.append(select);
- const reason=document.createElement('td');reason.className='reason';reason.textContent=t.reason;
- tr.append(num,w,p,cat,reason);tbody.append(tr)});
- table.append(tbody);wrap.append(table);result.className='';result.replaceChildren(wrap);exp.hidden=false;
-}
-document.getElementById('run').addEventListener('click',()=>{
- try{
- err.textContent='';
- if(!('Segmenter' in Intl)){throw new Error('当前浏览器不支持 Intl.Segmenter，请更新浏览器。')}
- if(!input.value.trim())throw new Error('请先输入要拆分的句子。');
- tokens=segment(input.value);
- if(tokens.map(t=>t.word).join('')!==input.value)throw new Error('分词结果校验失败，请重试。');
- render();
- }catch(e){err.textContent=e.message;}
-});
-function csvCell(s){return '"'+String(s).replace(/"/g,'""')+'"'}
-exp.addEventListener('click',()=>{
- const lines=[['词语','词性','实体分类','判断依据'],...tokens.map(t=>[t.word,t.pos,t.entity,t.reason])];
- const csv='\uFEFF'+lines.map(row=>row.map(csvCell).join(',')).join('\r\n');
- const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='拆词结果.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
-});
+function split(){state.source=el('source').value;state.rows=state.source.split(/\r?\n/).filter(s=>s.trim()).map(parseLine);state.filter='all';refresh();}
+function refresh(){save();renderGroups();renderWords();renderChips();renderRows();renderOutput();el('lineCount').textContent=state.source.split(/\r?\n/).filter(x=>x.trim()).length+' 条'}
+function renderGroups(){const box=el('groups');box.replaceChildren();state.groups.forEach((g,i)=>{const row=textNode('div','','group'),dot=textNode('span','','dot');dot.style.background=colors[i%colors.length];const field=document.createElement('input');field.value=g.name;field.setAttribute('aria-label','分组名称');field.addEventListener('change',()=>{const next=field.value.trim().slice(0,30);if(!next||state.groups.some(x=>x.id!==g.id&&x.name===next)){field.value=g.name;return}g.name=next;refresh()});row.append(dot,field,button('删除',()=>{if(state.groups.length<=1)return alert('至少保留一个分组');if(!confirm('删除此分组？该类别的词库和结果将转为第一个其他分组。'))return;const fallback=state.groups.find(x=>x.id!==g.id).id;state.words.forEach(w=>{if(w.group===g.id)w.group=fallback});state.rows.forEach(r=>{if(r.group===g.id)r.group=fallback});state.groups=state.groups.filter(x=>x.id!==g.id);refresh()}));box.append(row)});options(el('wordGroup'),el('wordGroup').value)}
+function renderWords(){const container=el('dictionary');container.replaceChildren();state.words.sort((a,b)=>a.word.localeCompare(b.word,'zh-CN')).forEach(w=>{const row=textNode('div','','group'),name=textNode('span',w.word);name.style.flex='1';const sel=document.createElement('select');options(sel,w.group);sel.addEventListener('change',()=>{w.group=sel.value;refresh()});row.append(name,sel,button('×',()=>{state.words=state.words.filter(x=>x!==w);refresh()}));container.append(row)})}
+function renderChips(){const chips=el('chips');chips.replaceChildren();const items=[['all','全部'],...state.groups.map(g=>[g.id,g.name])];for(const [id,name] of items){const n=id==='all'?state.rows.length:state.rows.filter(r=>r.group===id).length;const b=button(name+' '+n,()=>{state.filter=id;renderChips();renderRows()},'chip'+(state.filter===id?' active':''));chips.append(b)}}
+function renderRows(){const place=el('tablewrap');place.replaceChildren();const rows=state.rows.filter(r=>state.filter==='all'||r.group===state.filter);if(!rows.length){place.append(textNode('div','当前没有结果','empty'));return}const table=document.createElement('table');table.className='table';const head=document.createElement('thead'),hrow=document.createElement('tr');['#','原句 / 提示','类别','主体 / 词根','攻击落点 / 剩余内容','操作'].forEach(h=>hrow.append(textNode('th',h)));head.append(hrow);table.append(head);const body=document.createElement('tbody');rows.forEach((r)=>{const tr=document.createElement('tr');if(r.group===idByName('待确认')||r.group===idByName('未拆分'))tr.className='flag';tr.append(textNode('td',state.rows.indexOf(r)+1));const first=document.createElement('td');first.append(textNode('div',r.raw),textNode('small',r.note,'hint'));tr.append(first);const tdC=document.createElement('td'),sel=document.createElement('select');options(sel,r.group);sel.addEventListener('change',()=>{r.group=sel.value;r.note='用户手动修改';refresh()});tdC.append(sel);tr.append(tdC);for(const key of ['subject','target']){const td=document.createElement('td'),inp=document.createElement('input');inp.value=r[key];inp.setAttribute('aria-label',key==='subject'?'主体':'攻击落点');inp.addEventListener('change',()=>{r[key]=inp.value;r.note='用户手动修改';save();renderOutput()});if(key==='subject')inp.className='subject';td.append(inp);tr.append(td)}const actions=document.createElement('td');actions.className='rowbuttons';actions.append(button('记入词库',()=>{const word=r.subject.trim();if(!word)return;const existing=state.words.find(w=>w.word===word);if(existing)existing.group=r.group;else state.words.push({word,group:r.group});r.note='已记入词库';refresh()}),button('删除',()=>{state.rows=state.rows.filter(x=>x!==r);refresh()}));tr.append(actions);body.append(tr)});table.append(body);place.append(table)}
+const formats=[['groups','分组词库块'],['subjects','按主体归并'],['table','表格粘贴'],['lines','逐条对照'],['csv','CSV']];
+function buildOutput(){const rows=state.rows;switch(state.format){
+case 'subjects':return state.groups.map(g=>{const group=rows.filter(r=>r.group===g.id);const unique=[...new Set(group.map(r=>r.subject.trim()).filter(Boolean))];return unique.length?g.name+'\n'+unique.join(' || '):''}).filter(Boolean).join('\n\n');
+case 'table':return [['分类','主体','攻击落点','原句'],...rows.map(r=>[groupName(r.group),r.subject,r.target,r.raw])].map(r=>r.join('\t')).join('\n');
+case 'lines':return rows.map((r,i)=>(i+1)+'. ['+groupName(r.group)+'] '+r.subject+' || '+r.target).join('\n');
+case 'csv':{const cell=s=>'"'+String(s).replace(/"/g,'""')+'"';return [['分类','主体','攻击落点','原句'],...rows.map(r=>[groupName(r.group),r.subject,r.target,r.raw])].map(r=>r.map(cell).join(',')).join('\r\n')}
+default:return state.groups.map(g=>{const rs=rows.filter(r=>r.group===g.id);if(!rs.length)return '';return g.name+'（'+rs.length+'）\n通用合并文本 | 包含任意\n'+[...new Set(rs.map(r=>r.subject.trim()).filter(Boolean))].join(' || ')+'\n攻击落点：\n'+rs.map(r=>r.target||'（空）').join('\n')}).filter(Boolean).join('\n\n');}}
+function renderOutput(){el('tabs').replaceChildren();formats.forEach(([id,label])=>el('tabs').append(button(label,()=>{state.format=id;renderOutput();save()},state.format===id?'on':'')));el('output').value=buildOutput();el('formatHint').textContent='复制范围：当前所有 '+state.rows.length+' 条结果（不受上方筛选影响）；输出格式：'+formats.find(x=>x[0]===state.format)[1]}
+function download(name,content,type){const link=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1200)}
+el('source').addEventListener('input',()=>{el('lineCount').textContent=el('source').value.split(/\r?\n/).filter(x=>x.trim()).length+' 条';state.source=el('source').value;save()});
+el('split').addEventListener('click',()=>{if(state.rows.length&&!confirm('重新拆分将覆盖右侧当前的人工修正，是否继续？'))return;split()});
+el('clear').addEventListener('click',()=>{if(!confirm('清空原始样本和当前拆分结果？'))return;el('source').value='';state.source='';state.rows=[];state.filter='all';refresh()});
+el('restore').addEventListener('click',()=>{el('source').value=EXAMPLE;state.source=EXAMPLE;save();el('lineCount').textContent=EXAMPLE.split('\n').length+' 条'});
+el('addGroup').addEventListener('click',()=>{const name=el('newGroup').value.trim().slice(0,30);if(!name||state.groups.some(g=>g.name===name))return alert('请输入不重复的分组名称');state.groups.push({id:'u'+Date.now().toString(36),name});el('newGroup').value='';refresh()});
+el('addWord').addEventListener('click',()=>{const word=el('newWord').value.trim().slice(0,80);if(!word)return;const group=el('wordGroup').value;const old=state.words.find(w=>w.word===word);if(old)old.group=group;else state.words.push({word,group});el('newWord').value='';refresh()});
+el('copy').addEventListener('click',async()=>{const v=el('output').value;if(!v)return alert('暂无可复制内容');try{await navigator.clipboard.writeText(v);el('copy').textContent='已复制 ✓';setTimeout(()=>el('copy').textContent='复制全部',1600)}catch{el('output').select();const ok=document.execCommand('copy');alert(ok?'复制成功':'无法自动复制，请长按或全选下方文本复制')}});
+el('download').addEventListener('click',()=>download('拆词结果.'+(state.format==='csv'?'csv':state.format==='table'?'tsv':'txt'),'\uFEFF'+buildOutput(),'text/plain;charset=utf-8'));
+el('exportConfig').addEventListener('click',()=>download('拆词工作台配置.json',JSON.stringify({groups:state.groups,words:state.words},null,2),'application/json;charset=utf-8'));
+el('importConfig').addEventListener('click',()=>el('fileConfig').click());
+el('fileConfig').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!Array.isArray(data.groups)||!Array.isArray(data.words)||data.groups.length<1||data.groups.length>100||data.words.length>10000)throw Error('格式不正确');const gs=data.groups.map(x=>({id:String(x.id).slice(0,40),name:String(x.name).slice(0,30)}));if(gs.some(x=>!x.id||!x.name)||new Set(gs.map(x=>x.id)).size!==gs.length)throw Error('分组不合法');state.groups=gs;state.words=data.words.filter(x=>x&&typeof x.word==='string'&&gs.some(g=>g.id===x.group)).map(x=>({word:x.word.slice(0,80),group:x.group}));state.rows.forEach(r=>r.group=safeGroup(r.group));state.filter='all';refresh();alert('配置已导入')}catch(e){alert('导入失败：'+e.message)}e.target.value=''});
+restore();el('source').value=state.source;if(state.rows.length)refresh();else split();
+})();
 </script></body></html>
